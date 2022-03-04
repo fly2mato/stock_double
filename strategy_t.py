@@ -56,17 +56,41 @@ def iter_date(stock: pd.DataFrame, state: dict, info:bool =True):
     state['value_list'] = value_list
     return state
 
-# stock_pool_history = pd.read_csv('./data/stock_history.csv')
-# stock_pool_history['code'] = stock_pool_history['code'].apply(lambda x: x[3:])
-# test_code_list = ['600036', '000858', '002601', '002466']
-# test_code_list = ['000858']
-# test_code_list = ['002466']
-#
-# trade_date = '2021-07-01'
+stock_pool_history = pd.read_csv('./data/stock_history_d.csv')
+stock_pool_history['code'] = stock_pool_history['code'].apply(lambda x: x[3:])
+test_code_list = ['600036', '000858', '002601', '002466']
+test_code_list = ['000858']
+test_code_list = ['600519']
 
-# fig = plt.figure()
+trade_date = '2021-07-01'
+
+fig = plt.figure()
+
+for test_code in test_code_list:
+    init_state = {
+        'cash': 1e6,
+        'stock': 0,
+        'cost': 0,
+        'value': 1e6
+    }
+    test_stock = stock_pool_history[stock_pool_history.code == test_code]
+    test_stock = calc_signal(test_stock)
+    state = iter_date(test_stock[test_stock.date >= trade_date], init_state)
+    print(test_code, state['value'])
+    plt.plot(state['value_list'], '-o')
+
+plt.show()
+print('end')
+
+
+
+# stock_pool_history = pd.read_csv('./data/stock_history_d.csv')
+# test_code_list = pd.read_csv('./data/stock_pool.csv', header=0).values
+# trade_date = '2021-07-01'
 #
-# for test_code in test_code_list:
+# ans = []
+#
+# for test_code, code_name in test_code_list:
 #     init_state = {
 #         'cash': 1e5,
 #         'stock': 0,
@@ -74,37 +98,14 @@ def iter_date(stock: pd.DataFrame, state: dict, info:bool =True):
 #         'value': 1e5
 #     }
 #     test_stock = stock_pool_history[stock_pool_history.code == test_code]
+#     if len(test_stock) == 0:
+#         continue
 #     test_stock = calc_signal(test_stock)
-#     state = iter_date(test_stock[test_stock.date >= trade_date], init_state)
-#     print(test_code, state['value'])
-#     plt.plot(state['value_list'], '-o')
-#
-# plt.show()
+#     state = iter_date(test_stock[test_stock.date >= trade_date], init_state, False)
+#     # print(f"code={test_code}, name={code_name}, cash={state['cash']:.2f}, stock={state['stock']:2d}, cost={state['cost']:.2f}, value={state['value']:.2f}")
+#     print(f"code={test_code}, name={code_name}, value={state['value']:.2f}")
+#     ans.append([test_code, state])
 # print('end')
-
-
-
-stock_pool_history = pd.read_csv('./data/stock_history.csv')
-test_code_list = pd.read_csv('./data/stock_pool.csv', header=0).values
-trade_date = '2021-07-01'
-
-ans = []
-
-for test_code, code_name in test_code_list:
-    init_state = {
-        'cash': 1e5,
-        'stock': 0,
-        'cost': 0,
-        'value': 1e5
-    }
-    test_stock = stock_pool_history[stock_pool_history.code == test_code]
-    if len(test_stock) == 0:
-        continue
-    test_stock = calc_signal(test_stock)
-    state = iter_date(test_stock[test_stock.date >= trade_date], init_state, False)
-    print(f"code={test_code}, name={code_name}, cash={state['cash']:.2f}, stock={state['stock']:2d}, cost={state['cost']:.2f}, value={state['value']:.2f}")
-    ans.append([test_code, state])
-print('end')
 
 
 

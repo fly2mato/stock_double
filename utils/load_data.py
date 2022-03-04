@@ -63,6 +63,7 @@ def load_history_k_data(freq='d', adjust='2', start_date='2011-01-01'):
         stock_history_list.append(pd.read_csv(stock_history_path + f'/tmp/{idx}.csv', header=0))
         os.remove(stock_history_path + f'/tmp/{idx}.csv')
     stock_history = pd.concat(stock_history_list)
+    stock_history.loc[:, 'code'] = stock_history.loc[:, 'code'].apply(lambda x: str(x[3:]))
     stock_history.to_csv(stock_history_path + f'/stock_history_{freq}.csv', index=False)
 
 
@@ -78,3 +79,26 @@ def load_stock_industry():
     df = bs.query_stock_industry().get_data()
     bs.logout()
     return df
+
+
+def load_index_history(state_date='', end_date='', freq='d'):
+    bs.login()
+
+    index_code = ['sh.000001',
+                 'sh.000300', #hs300
+                 'sh.000905', #zz500
+                 'sz.399303', #国2000
+                 'sz.399673', #创50
+                 ]
+
+    data_list = []
+    for code in index_code:
+        df = bs.query_history_k_data_plus(code,
+                                      "date,code,open,high,low,close,preclose,volume,amount,pctChg",
+                                      start_date=state_date, end_date=end_date, frequency=freq).get_data()
+        data_list.append(df)
+
+    index_history = pd.concat(data_list)
+    # index_history.loc[:, 'code'] = index_history.loc[:, 'code'].apply(lambda x: str(x[3:]))
+    index_history.to_csv(f'./data/index_history_{freq}.csv', index=False)
+    bs.logout()
