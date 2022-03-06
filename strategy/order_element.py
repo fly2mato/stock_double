@@ -5,6 +5,8 @@ class Position:
         self.stock = stock
         self.cost = cost
         self.value = cash + stock * 0 - cost
+        # self.value_list = []
+
 
 
 class Order:

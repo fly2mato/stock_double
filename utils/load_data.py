@@ -38,6 +38,8 @@ def load_history_k_data(freq='d', adjust='2', start_date='2011-01-01'):
         stock_pool = get_stock_pool()
         stock_pool.to_csv(stock_pool_path, index=False)
 
+    pool_len = len(stock_pool)
+    print(pool_len)
     if freq=='d':
         fields = "date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM,isST"
     else:
@@ -46,10 +48,11 @@ def load_history_k_data(freq='d', adjust='2', start_date='2011-01-01'):
     end_date = datetime.strftime(datetime.fromtimestamp(int(time.time())), '%Y-%m-%d')
 
     s_stime = int(time.time())
-    n = 20
+    n = 1
+    process_len = int(pool_len // n)
     jobs = []
     for idx in range(n):
-        code_list = stock_pool.code.values[idx * 40:(idx + 1) * 40]
+        code_list = stock_pool.code.values[idx * process_len:(idx + 1) * process_len]
         process = multiprocessing.Process(target=load_code_kdata, args=(idx, code_list, fields, start_date, end_date, freq, adjust))
         jobs.append(process)
         process.start()
@@ -81,7 +84,7 @@ def load_stock_industry():
     return df
 
 
-def load_index_history(state_date='', end_date='', freq='d'):
+def load_index_history(start_date='', end_date='', freq='d'):
     bs.login()
 
     index_code = ['sh.000001',
@@ -95,10 +98,46 @@ def load_index_history(state_date='', end_date='', freq='d'):
     for code in index_code:
         df = bs.query_history_k_data_plus(code,
                                       "date,code,open,high,low,close,preclose,volume,amount,pctChg",
-                                      start_date=state_date, end_date=end_date, frequency=freq).get_data()
+                                      start_date=start_date, end_date=end_date, frequency=freq).get_data()
         data_list.append(df)
 
     index_history = pd.concat(data_list)
     # index_history.loc[:, 'code'] = index_history.loc[:, 'code'].apply(lambda x: str(x[3:]))
     index_history.to_csv(f'./data/index_history_{freq}.csv', index=False)
     bs.logout()
+
+
+def load_history(code, start_date='2018-01-01'):
+    stock_history = pd.read_csv('./data/stock_history_d.csv', header=0, dtype={'code': str}) \
+        .query(f"code == '{code}'")
+
+    if len(stock_history) == 0:
+        bs.login()
+        fields = "date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM,isST"
+        if code[0] == '6':
+            prex = 'sh.'
+        else:
+            prex = 'sz.'
+        stock_history = bs.query_history_k_data_plus(prex+code, fields, start_date=start_date, frequency='d', adjustflag='2').get_data()\
+        .query("tradestatus != '0' and tradestatus != 0")\
+        .astype({
+            'open': 'float64',
+            'high': 'float64',
+            'low': 'float64',
+            'close': 'float64',
+            'preclose': 'float64',
+            'volume': 'float64',
+            'amount': 'float64',
+            'adjustflag': 'int64',
+            'turn': 'float64',
+            'tradestatus': 'int64',
+            'pctChg': 'float64',
+            'peTTM': 'float64',
+            'pbMRQ':'float64',
+            'psTTM':'float64',
+            'pcfNcfTTM':'float64',
+            'isST': 'int64'
+        })
+        stock_history['code'] = code
+        bs.logout()
+    return stock_history
