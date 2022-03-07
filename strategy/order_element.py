@@ -7,8 +7,6 @@ class Position:
         self.value = cash + stock * 0 - cost
         # self.value_list = []
 
-
-
 class Order:
     def __init__(self, price, trade_percent):
         self.price = price
